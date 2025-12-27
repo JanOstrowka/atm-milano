@@ -18,10 +18,12 @@
       "cannot_connect": "Failed to connect to ATM Milano API. Please check your internet connection.",
       "invalid_stop": "Stop ID not found. Please verify the stop ID is correct.",
       "invalid_stop_id": "Invalid stop ID format. Must be a numeric value (1-10 digits).",
+      "api_error": "The ATM Milano API returned an unexpected response. The service may be temporarily unavailable.",
       "unknown": "An unexpected error occurred. Please try again."
     },
     "abort": {
-      "already_configured": "This stop is already configured."
+      "already_configured": "This stop is already configured.",
+      "already_in_progress": "Configuration is already in progress. Please complete or cancel the existing setup first."
     }
   }
 }

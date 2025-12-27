@@ -15,7 +15,7 @@ from homeassistant.helpers.selector import (
     NumberSelectorMode,
 )
 
-from .api import ATMApiConnectionError, ATMApiInvalidStopError, ATMClient
+from .api import ATMApiConnectionError, ATMApiError, ATMApiInvalidStopError, ATMClient
 from .const import (
     CONF_SCAN_INTERVAL,
     CONF_STOP_ID,
@@ -90,11 +90,16 @@ class ATMMilanoConfigFlow(ConfigFlow, domain=DOMAIN):
                         },
                     )
                 except ATMApiInvalidStopError:
+                    _LOGGER.warning("Invalid stop ID: %s", stop_id)
                     errors["base"] = "invalid_stop"
-                except ATMApiConnectionError:
+                except ATMApiConnectionError as err:
+                    _LOGGER.warning("Connection error for stop %s: %s", stop_id, err)
                     errors["base"] = "cannot_connect"
+                except ATMApiError as err:
+                    _LOGGER.warning("API error for stop %s: %s", stop_id, err)
+                    errors["base"] = "api_error"
                 except Exception:
-                    _LOGGER.exception("Unexpected error during config flow")
+                    _LOGGER.exception("Unexpected error during config flow for stop %s", stop_id)
                     errors["base"] = "unknown"
 
         return self.async_show_form(

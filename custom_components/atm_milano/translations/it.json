@@ -18,10 +18,12 @@
       "cannot_connect": "Impossibile connettersi all'API ATM Milano. Controlla la connessione internet.",
       "invalid_stop": "ID fermata non trovato. Verifica che l'ID sia corretto.",
       "invalid_stop_id": "Formato ID fermata non valido. Deve essere un valore numerico (1-10 cifre).",
+      "api_error": "L'API ATM Milano ha restituito una risposta inattesa. Il servizio potrebbe essere temporaneamente non disponibile.",
       "unknown": "Si è verificato un errore imprevisto. Riprova."
     },
     "abort": {
-      "already_configured": "Questa fermata è già configurata."
+      "already_configured": "Questa fermata è già configurata.",
+      "already_in_progress": "Configurazione già in corso. Completa o annulla prima la configurazione esistente."
     }
   }
 }

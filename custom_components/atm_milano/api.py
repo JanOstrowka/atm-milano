@@ -12,6 +12,15 @@ from .const import API_BASE_URL, API_TIMEOUT
 
 _LOGGER = logging.getLogger(__name__)
 
+# Headers to mimic browser requests (required by Akamai protection)
+DEFAULT_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9,it;q=0.8",
+    "Referer": "https://giromilano.atm.it/",
+    "Origin": "https://giromilano.atm.it",
+}
+
 
 class ATMApiError(Exception):
     """Exception raised when API call fails."""
@@ -54,15 +63,32 @@ class ATMClient:
         
         try:
             async with asyncio.timeout(API_TIMEOUT):
-                async with self._session.get(url) as response:
+                async with self._session.get(url, headers=DEFAULT_HEADERS) as response:
                     if response.status == 404:
                         raise ATMApiInvalidStopError(
                             f"Stop ID {stop_id} not found"
                         )
                     
+                    if response.status == 403:
+                        raise ATMApiConnectionError(
+                            "Access denied by ATM Milano API (403 Forbidden)"
+                        )
+                    
                     if response.status != 200:
                         raise ATMApiError(
                             f"API returned status {response.status}"
+                        )
+                    
+                    # Check content type to detect HTML error pages
+                    content_type = response.headers.get("Content-Type", "")
+                    if "text/html" in content_type:
+                        text = await response.text()
+                        if "Access Denied" in text:
+                            raise ATMApiConnectionError(
+                                "Access denied by ATM Milano API (blocked by protection)"
+                            )
+                        raise ATMApiError(
+                            "API returned HTML instead of JSON"
                         )
                     
                     data = await response.json()
