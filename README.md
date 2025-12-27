@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets-for-readme/logo.svg" alt="ATM Milano Logo" width="128" height="128">
+</p>
+
 # ATM Milano Realtime Stops
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
