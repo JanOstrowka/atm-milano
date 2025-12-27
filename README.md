@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets-for-readme/logo.svg" alt="ATM Milano Logo" width="128" height="128">
+  <img src="assets-for-readme/logo.svg" alt="ATM Milano" width="128" height="128">
 </p>
 
 # ATM Milano Realtime Stops
