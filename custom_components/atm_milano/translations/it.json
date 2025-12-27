@@ -1,0 +1,28 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fermata ATM Milano",
+        "description": "Inserisci l'ID della fermata da monitorare. Puoi trovare l'ID della fermata nell'app o nel sito ATM Milano.",
+        "data": {
+          "stop_id": "ID Fermata",
+          "scan_interval": "Intervallo di aggiornamento (secondi)"
+        },
+        "data_description": {
+          "stop_id": "L'ID numerico della fermata (es. 11335)",
+          "scan_interval": "Frequenza di aggiornamento dati (15-120 secondi, default: 60)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossibile connettersi all'API ATM Milano. Controlla la connessione internet.",
+      "invalid_stop": "ID fermata non trovato. Verifica che l'ID sia corretto.",
+      "invalid_stop_id": "Formato ID fermata non valido. Deve essere un valore numerico (1-10 cifre).",
+      "unknown": "Si è verificato un errore imprevisto. Riprova."
+    },
+    "abort": {
+      "already_configured": "Questa fermata è già configurata."
+    }
+  }
+}
+

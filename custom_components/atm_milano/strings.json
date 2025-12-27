@@ -1,0 +1,28 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "ATM Milano Stop",
+        "description": "Enter the stop ID to monitor. You can find the stop ID in the ATM Milano app or website.",
+        "data": {
+          "stop_id": "Stop ID",
+          "scan_interval": "Update interval (seconds)"
+        },
+        "data_description": {
+          "stop_id": "The numeric stop ID (e.g., 11335)",
+          "scan_interval": "How often to fetch data (15-120 seconds, default: 60)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to ATM Milano API. Please check your internet connection.",
+      "invalid_stop": "Stop ID not found. Please verify the stop ID is correct.",
+      "invalid_stop_id": "Invalid stop ID format. Must be a numeric value (1-10 digits).",
+      "unknown": "An unexpected error occurred. Please try again."
+    },
+    "abort": {
+      "already_configured": "This stop is already configured."
+    }
+  }
+}
+
