@@ -51,12 +51,17 @@ A Home Assistant custom integration for real-time public transport arrival times
 
 ### How to Find Your Stop ID
 
-https://github.com/user-attachments/assets/how-to-find-stop-id.mp4
+You can find the stop ID in the ATM Milano app or on [giromilano.atm.it](https://giromilano.atm.it). Here's how (as shown in the GIF below):
 
-You can find the stop ID in the ATM Milano app or on [giromilano.atm.it](https://giromilano.atm.it):
+1. Go to [giromilano.atm.it](https://giromilano.atm.it)
+2. Click on **Surface Vehicle Stops** to show stops on the map
+3. Find your desired stop on the map and click on it
+4. View more details for a transport mode by clicking on it or the **>** icon
+5. The stop ID appears after "Codice" (e.g., `Codice 11491`)
 
-1. Search for your stop
-2. Look at the URL or stop details for the numeric ID (e.g., `11335` for "Bausan")
+<p align="center">
+  <img src="assets-for-readme/how-to-find-stop-id.gif" alt="How to find your stop ID" width="600">
+</p>
 
 ## Entities
 
