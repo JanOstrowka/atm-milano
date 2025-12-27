@@ -59,9 +59,7 @@ You can find the stop ID in the ATM Milano app or on [giromilano.atm.it](https:/
 4. View more details for a transport mode by clicking on it or the **>** icon
 5. The stop ID appears after "Codice" (e.g., `Codice 11491`)
 
-<p align="center">
-  <img src="assets-for-readme/how-to-find-stop-id.gif" alt="How to find your stop ID" width="600">
-</p>
+![How to find your stop ID](assets-for-readme/how-to-find-stop-id.gif)
 
 ## Entities
 
