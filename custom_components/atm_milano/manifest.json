@@ -1,7 +1,7 @@
 {
   "domain": "atm_milano",
   "name": "ATM Milano Realtime Stops",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "codeowners": ["@JanOstrowka"],
   "config_flow": true,
   "documentation": "https://github.com/JanOstrowka/atm-milano",
