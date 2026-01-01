@@ -8,7 +8,6 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
@@ -73,8 +72,9 @@ class ATMMilanoConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._abort_if_unique_id_configured()
                 
                 # Validate by fetching from API
-                session = async_get_clientsession(self.hass)
-                client = ATMClient(session)
+                # Create a fresh client without Home Assistant's shared session
+                # to avoid potential conflicts with the ATM API
+                client = ATMClient()
                 
                 try:
                     data = await client.async_get_stop(stop_id)
@@ -101,6 +101,8 @@ class ATMMilanoConfigFlow(ConfigFlow, domain=DOMAIN):
                 except Exception:
                     _LOGGER.exception("Unexpected error during config flow for stop %s", stop_id)
                     errors["base"] = "unknown"
+                finally:
+                    await client.async_close()
 
         return self.async_show_form(
             step_id="user",

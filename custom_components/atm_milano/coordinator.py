@@ -8,7 +8,6 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import ATMApiError, ATMClient
@@ -42,8 +41,9 @@ class ATMStopCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             config_entry=entry,
         )
         
-        session = async_get_clientsession(hass)
-        self._client = ATMClient(session)
+        # Use standalone client to avoid issues with Home Assistant's shared session
+        # The ATM API requires specific headers that work better with a dedicated session
+        self._client = ATMClient()
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from ATM Milano API.
@@ -63,4 +63,9 @@ class ATMStopCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.stop_name = data.get("Description", f"Stop {self.stop_id}")
         
         return data
+
+    async def async_shutdown(self) -> None:
+        """Shutdown the coordinator and close the API client."""
+        await super().async_shutdown()
+        await self._client.async_close()
 
