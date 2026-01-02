@@ -14,12 +14,16 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import ATMMilanoConfigEntry
 from .const import (
+    BUS_STATUS_ICONS,
     CONF_STOP_ID,
     DOMAIN,
+    LINE_TYPES,
     STATUS_IN_ARRIVO,
     STATUS_RICALCOLO,
     STATUS_SOPPRESSA,
+    TRANSPORT_ICONS,
     WAIT_MINUTES_PATTERN,
+    TransportType,
     WaitStatus,
 )
 from .coordinator import ATMStopCoordinator
@@ -52,7 +56,7 @@ def parse_wait_message(wait_msg: str | None) -> ParsedWaitMessage:
             raw_text="",
             state_value="unknown",
             wait_minutes=None,
-            status=WaitStatus.UNKNOWN_TEXT,
+            status=WaitStatus.UNKNOWN,
             unit=None,
         )
 
@@ -75,19 +79,19 @@ def parse_wait_message(wait_msg: str | None) -> ParsedWaitMessage:
     if lower_text == STATUS_IN_ARRIVO:
         return ParsedWaitMessage(
             raw_text=raw_text,
-            state_value=raw_text,  # Preserve original capitalization
+            state_value="arriving",
             wait_minutes=0,
-            status=WaitStatus.IN_ARRIVO,
+            status=WaitStatus.ARRIVING,
             unit=None,
         )
 
-    # Check for "ricalcolo" (recalculating)
+    # Check for "ricalcolo" (updating/recalculating)
     if lower_text == STATUS_RICALCOLO:
         return ParsedWaitMessage(
             raw_text=raw_text,
-            state_value=raw_text,
+            state_value="updating",
             wait_minutes=None,
-            status=WaitStatus.RICALCOLO,
+            status=WaitStatus.UPDATING,
             unit=None,
         )
 
@@ -95,9 +99,9 @@ def parse_wait_message(wait_msg: str | None) -> ParsedWaitMessage:
     if lower_text == STATUS_SOPPRESSA:
         return ParsedWaitMessage(
             raw_text=raw_text,
-            state_value=raw_text,
+            state_value="cancelled",
             wait_minutes=None,
-            status=WaitStatus.SOPPRESSA,
+            status=WaitStatus.CANCELLED,
             unit=None,
         )
 
@@ -106,9 +110,44 @@ def parse_wait_message(wait_msg: str | None) -> ParsedWaitMessage:
         raw_text=raw_text,
         state_value=raw_text,
         wait_minutes=None,
-        status=WaitStatus.UNKNOWN_TEXT,
+        status=WaitStatus.UNKNOWN,
         unit=None,
     )
+
+
+def get_transport_type(line_code: str) -> TransportType:
+    """Determine transport type from line code.
+
+    Args:
+        line_code: The line code (e.g., "2", "M1", "92").
+
+    Returns:
+        TransportType for this line.
+    """
+    # Check explicit mapping first
+    if line_code in LINE_TYPES:
+        return LINE_TYPES[line_code]
+
+    # Default to bus for numeric lines not in mapping
+    return TransportType.BUS
+
+
+def get_icon_for_status(transport_type: TransportType, status: WaitStatus) -> str:
+    """Get the appropriate icon based on transport type and status.
+
+    Only buses have status-specific icons. Other transport types use their base icon.
+
+    Args:
+        transport_type: The type of transport.
+        status: Current wait status.
+
+    Returns:
+        MDI icon string.
+    """
+    if transport_type == TransportType.BUS:
+        return BUS_STATUS_ICONS.get(status, "mdi:bus")
+
+    return TRANSPORT_ICONS.get(transport_type, "mdi:bus")
 
 
 async def async_setup_entry(
@@ -127,7 +166,7 @@ async def async_setup_entry(
     stop_id = entry.data[CONF_STOP_ID]
 
     entities: list[ATMLineSensor] = []
-    
+
     # Track which line+direction combinations we've seen
     seen_keys: set[str] = set()
 
@@ -151,7 +190,7 @@ async def async_setup_entry(
                     line_code=line_code,
                     direction=direction,
                     line_description=line_info.get("LineDescription", ""),
-                    transport_mode=line_info.get("TransportMode"),
+                    booklet_url=line.get("BookletUrl"),
                 )
             )
 
@@ -171,7 +210,7 @@ class ATMLineSensor(CoordinatorEntity[ATMStopCoordinator], SensorEntity):
         line_code: str,
         direction: str,
         line_description: str,
-        transport_mode: int | None,
+        booklet_url: str | None,
     ) -> None:
         """Initialize the sensor.
 
@@ -181,7 +220,7 @@ class ATMLineSensor(CoordinatorEntity[ATMStopCoordinator], SensorEntity):
             line_code: Line code (e.g., "2", "92").
             direction: Direction as string ("0" or "1").
             line_description: Line description (e.g., "P.za Bausan - P.le Negrelli").
-            transport_mode: Transport mode number.
+            booklet_url: URL to PDF timetable.
         """
         super().__init__(coordinator)
 
@@ -189,7 +228,8 @@ class ATMLineSensor(CoordinatorEntity[ATMStopCoordinator], SensorEntity):
         self._line_code = line_code
         self._direction = direction
         self._line_description = line_description
-        self._transport_mode = transport_mode
+        self._booklet_url = booklet_url
+        self._transport_type = get_transport_type(line_code)
 
         # Unique ID for this sensor
         self._attr_unique_id = f"{stop_id}_{line_code}_{direction}"
@@ -263,6 +303,12 @@ class ATMLineSensor(CoordinatorEntity[ATMStopCoordinator], SensorEntity):
         return self._parsed.unit
 
     @property
+    def icon(self) -> str:
+        """Return the icon based on transport type and status."""
+        status = self._parsed.status if self._parsed else WaitStatus.UNKNOWN
+        return get_icon_for_status(self._transport_type, status)
+
+    @property
     def available(self) -> bool:
         """Return if entity is available."""
         if not super().available:
@@ -276,7 +322,19 @@ class ATMLineSensor(CoordinatorEntity[ATMStopCoordinator], SensorEntity):
         attrs: dict[str, Any] = {
             "line_code": self._line_code,
             "line_description": self._line_description,
+            "transport_type": self._transport_type.value,
         }
+
+        # Add stop coordinates from coordinator data
+        if self.coordinator.data:
+            location = self.coordinator.data.get("Location", {})
+            if location:
+                attrs["stop_latitude"] = location.get("Y")
+                attrs["stop_longitude"] = location.get("X")
+
+        # Add timetable URL
+        if self._booklet_url:
+            attrs["timetable_url"] = self._booklet_url
 
         if self._parsed:
             attrs["wait_text"] = self._parsed.raw_text
@@ -284,4 +342,3 @@ class ATMLineSensor(CoordinatorEntity[ATMStopCoordinator], SensorEntity):
             attrs["status"] = self._parsed.status.value
 
         return attrs
-
