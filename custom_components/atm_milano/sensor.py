@@ -196,9 +196,9 @@ class ATMLineSensor(CoordinatorEntity[ATMStopCoordinator], SensorEntity):
 
         # Entity name
         if line_description:
-            self._attr_name = f"{line_code} (dir {direction}) – {line_description}"
+            self._attr_name = f"{line_code} – {line_description}"
         else:
-            self._attr_name = f"{line_code} (dir {direction})"
+            self._attr_name = line_code
 
         # Device info - group all sensors under the stop device
         self._attr_device_info = DeviceInfo(
@@ -275,9 +275,7 @@ class ATMLineSensor(CoordinatorEntity[ATMStopCoordinator], SensorEntity):
         """Return extra state attributes."""
         attrs: dict[str, Any] = {
             "line_code": self._line_code,
-            "direction": self._direction,
             "line_description": self._line_description,
-            "transport_mode_raw": self._transport_mode,
         }
 
         if self._parsed:
