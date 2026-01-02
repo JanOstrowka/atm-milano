@@ -10,15 +10,22 @@
 
 A Home Assistant custom integration for real-time public transport arrival times from ATM Milano (Azienda Trasporti Milanesi).
 
+## ⚠️ Legal Notice
+
+**This integration is intended for personal, non-commercial use only.**
+
+To comply with ATM Milano's terms of service, this HACS integration must not be used for commercial purposes. By using this integration, you agree to use it solely for personal home automation and not for any commercial application or redistribution.
+
 ## Features
 
-- Monitor real-time arrival times for trams, buses, and trolleybuses in Milan
-- One device per stop with sensors for each line/direction
-- Smart state handling:
+- 🚌 Monitor real-time arrival times for trams, buses, metro, and trolleybuses in Milan
+- 📍 One device per stop with sensors for each line
+- 🔄 Smart state handling:
   - Numeric minutes when available (e.g., `2` with unit `min`)
-  - Italian status text for special states (`in arrivo`, `ricalcolo`, `Soppressa`)
-- Configurable update interval (15-120 seconds)
-- Rich attributes for automations
+  - Translated status messages: `arriving`, `updating`, `cancelled`
+- 🎨 Dynamic icons based on transport type and status
+- ⏱️ Configurable update interval (15-120 seconds)
+- 📊 Rich attributes including GPS coordinates and timetable links
 
 ## Installation
 
@@ -69,23 +76,35 @@ For each line at the stop, a **Sensor** is created with:
 
 | Attribute | Description |
 |-----------|-------------|
-| `state` | Minutes (integer) or status text |
-| `wait_text` | Original API message (e.g., "2 min") |
-| `wait_minutes` | Integer minutes, `0` for "in arrivo", `None` for status messages |
-| `status` | Normalized status: `minutes`, `in_arrivo`, `ricalcolo`, `soppressa`, `unknown_text` |
+| `state` | Minutes (integer) or status text (`arriving`, `updating`, `cancelled`) |
+| `wait_text` | Original API message (e.g., "2 min", "in arrivo") |
+| `wait_minutes` | Integer minutes, `0` for arriving, `None` for status messages |
+| `status` | Normalized status: `minutes`, `arriving`, `updating`, `cancelled`, `unknown` |
 | `line_code` | Line number (e.g., "2", "92") |
-| `direction` | Direction (0 or 1) |
 | `line_description` | Route description |
-| `transport_mode_raw` | Transport mode number |
+| `transport_type` | Vehicle type: `bus`, `tram`, `metro`, `trolleybus`, `radiobus` |
+| `stop_latitude` | GPS latitude of the stop |
+| `stop_longitude` | GPS longitude of the stop |
+| `timetable_url` | Link to PDF timetable |
 
 ### State Values
 
-| WaitMessage | State | Unit | wait_minutes |
-|-------------|-------|------|--------------|
-| `"2 min"` | `2` | `min` | `2` |
-| `"in arrivo"` | `"in arrivo"` | - | `0` |
-| `"ricalcolo"` | `"ricalcolo"` | - | `None` |
-| `"Soppressa"` | `"Soppressa"` | - | `None` |
+| WaitMessage | State | Unit | wait_minutes | Icon (bus) |
+|-------------|-------|------|--------------|------------|
+| `"2 min"` | `2` | `min` | `2` | `mdi:bus` |
+| `"in arrivo"` | `"arriving"` | - | `0` | `mdi:bus-stop` |
+| `"ricalcolo"` | `"updating"` | - | `None` | `mdi:bus-clock` |
+| `"Soppressa"` | `"cancelled"` | - | `None` | `mdi:bus-alert` |
+
+### Transport Type Icons
+
+| Type | Icon |
+|------|------|
+| Bus | `mdi:bus` (with status variants) |
+| Tram | `mdi:tram` |
+| Metro | `mdi:subway` |
+| Trolleybus | `mdi:bus-electric` |
+| Radiobus | `mdi:bus-school` |
 
 ## Example Automations
 
@@ -97,15 +116,15 @@ automation:
     trigger:
       - platform: template
         value_template: >
-          {{ state_attr('sensor.bausan_2_dir_0', 'wait_minutes') is number
-             and state_attr('sensor.bausan_2_dir_0', 'wait_minutes') <= 4 }}
+          {{ state_attr('sensor.bausan_2_0', 'wait_minutes') is number
+             and state_attr('sensor.bausan_2_0', 'wait_minutes') <= 4 }}
     action:
       - service: notify.notify
         data:
           title: "Tram Alert"
           message: >
-            Tram 2: {{ states('sensor.bausan_2_dir_0') }} 
-            ({{ state_attr('sensor.bausan_2_dir_0', 'wait_text') }})
+            Tram 2: {{ states('sensor.bausan_2_0') }} 
+            ({{ state_attr('sensor.bausan_2_0', 'wait_text') }})
 ```
 
 ### Notify When Line is Cancelled
@@ -115,8 +134,8 @@ automation:
   - alias: "Line cancelled notification"
     trigger:
       - platform: state
-        entity_id: sensor.bausan_2_dir_0
-        to: "Soppressa"
+        entity_id: sensor.bausan_2_0
+        to: "cancelled"
     action:
       - service: notify.notify
         data:
@@ -130,9 +149,9 @@ automation:
 type: entities
 title: Fermata Bausan
 entities:
-  - entity: sensor.bausan_2_dir_0
+  - entity: sensor.bausan_2_0
     name: Tram 2
-  - entity: sensor.bausan_92_dir_0
+  - entity: sensor.bausan_92_0
     name: Filobus 92
 ```
 
