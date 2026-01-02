@@ -133,8 +133,11 @@ async def async_setup_entry(
 
     if coordinator.data and "Lines" in coordinator.data:
         for line in coordinator.data["Lines"]:
-            line_code = line.get("LineCode", "")
-            direction = line.get("Direction", 0)
+            # Line info is nested under "Line" object
+            line_info = line.get("Line", {})
+            line_code = line_info.get("LineCode", "")
+            # Direction is at top level and comes as a string from the API
+            direction = str(line.get("Direction", "0"))
             entity_key = f"{line_code}_{direction}"
 
             if entity_key in seen_keys:
@@ -147,8 +150,8 @@ async def async_setup_entry(
                     stop_id=stop_id,
                     line_code=line_code,
                     direction=direction,
-                    line_description=line.get("LineDescription", ""),
-                    transport_mode=line.get("TransportMode"),
+                    line_description=line_info.get("LineDescription", ""),
+                    transport_mode=line_info.get("TransportMode"),
                 )
             )
 
@@ -166,7 +169,7 @@ class ATMLineSensor(CoordinatorEntity[ATMStopCoordinator], SensorEntity):
         coordinator: ATMStopCoordinator,
         stop_id: str,
         line_code: str,
-        direction: int,
+        direction: str,
         line_description: str,
         transport_mode: int | None,
     ) -> None:
@@ -176,7 +179,7 @@ class ATMLineSensor(CoordinatorEntity[ATMStopCoordinator], SensorEntity):
             coordinator: Data update coordinator.
             stop_id: Stop ID.
             line_code: Line code (e.g., "2", "92").
-            direction: Direction (0 or 1).
+            direction: Direction as string ("0" or "1").
             line_description: Line description (e.g., "P.za Bausan - P.le Negrelli").
             transport_mode: Transport mode number.
         """
@@ -219,9 +222,12 @@ class ATMLineSensor(CoordinatorEntity[ATMStopCoordinator], SensorEntity):
             return None
 
         for line in self.coordinator.data["Lines"]:
+            # Line info is nested under "Line" object
+            line_info = line.get("Line", {})
+            # Direction is at top level and is a string
             if (
-                line.get("LineCode") == self._line_code
-                and line.get("Direction") == self._direction
+                line_info.get("LineCode") == self._line_code
+                and str(line.get("Direction", "")) == self._direction
             ):
                 return line
 
